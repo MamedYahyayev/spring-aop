@@ -35,7 +35,7 @@ public class EmployeeService {
         employee.setSalary(employeeDto.getSalary());
 
         Employee savedEmployee = employeeRepository.save(employee);
-        log.info("Saved Employee {} ", savedEmployee);
+        log.debug("Saved Employee {} ", savedEmployee);
         return savedEmployee;
     }
 }

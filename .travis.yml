@@ -1,0 +1,8 @@
+language: java
+jdk:
+  - openjdk11
+
+notifications:
+  email: yahyayev2001@gmail.com
+script:
+  - ./mvnw clean install

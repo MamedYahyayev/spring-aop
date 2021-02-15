@@ -46,5 +46,34 @@ public class LoggingAspect {
         log.info("This method executes before all methods inside of controller package");
     }
 
+    /**
+     *  this pointcut select all getter methods inside of domain package
+     */
+    @Pointcut("execution(* az.maqa.spring.aspect.domain.*.get*(*))")
+    public void getter(){}
+
+
+    /**
+     *  this pointcut select all setter methods inside of domain package
+     */
+    @Pointcut("execution(* az.maqa.spring.aspect.domain.*.set*(*))")
+    public void setter(){}
+
+    /**
+     *  this pointcut select all methods inside of base package
+     */
+    @Pointcut("execution(* az.maqa.spring.aspect.*.*.*(*))")
+    public void basePackage(){}
+
+
+    /**
+     *  this is pointcut combining and this methods select all methods inside of base package and without getter and setter methods
+     */
+    @Before("basePackage() && !(getter() || setter())")
+    public void forControllerPackageWithoutGetterAndSetter(){
+        log.info("This method Executes before the all base packages' method");
+    }
+
+
 
 }

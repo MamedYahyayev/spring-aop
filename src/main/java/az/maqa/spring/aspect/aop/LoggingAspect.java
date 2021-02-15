@@ -1,9 +1,7 @@
 package az.maqa.spring.aspect.aop;
 
-import org.aspectj.lang.annotation.After;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aopalliance.intercept.Joinpoint;
+import org.aspectj.lang.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -74,6 +72,15 @@ public class LoggingAspect {
         log.info("This method Executes before the all base packages' method");
     }
 
+    /**
+     * This method executes after the methods throwing error which inside of Employee Controller
+     *
+     * @param e exception
+     */
+    @AfterThrowing(pointcut = "execution(* az.maqa.spring.aspect.controller.EmployeeController.*(..))", throwing = "e")
+    public void afterThrowingLog(Throwable e){
+        log.info("This method executes after throwing error inside of EmployeeController's any methods");
+    }
 
 
 }

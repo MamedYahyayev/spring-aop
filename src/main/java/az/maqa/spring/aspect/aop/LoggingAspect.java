@@ -1,10 +1,13 @@
 package az.maqa.spring.aspect.aop;
 
-import org.aopalliance.intercept.Joinpoint;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 /**
  * Aspect for logging execution of controller and service
@@ -40,35 +43,38 @@ public class LoggingAspect {
     }
 
     @Before("forControllerPackage()")
-    public void logForControllerPackage(){
+    public void logForControllerPackage() {
         log.info("This method executes before all methods inside of controller package");
     }
 
     /**
-     *  this pointcut select all getter methods inside of domain package
+     * this pointcut select all getter methods inside of domain package
      */
     @Pointcut("execution(* az.maqa.spring.aspect.domain.*.get*(*))")
-    public void getter(){}
+    public void getter() {
+    }
 
 
     /**
-     *  this pointcut select all setter methods inside of domain package
+     * this pointcut select all setter methods inside of domain package
      */
     @Pointcut("execution(* az.maqa.spring.aspect.domain.*.set*(*))")
-    public void setter(){}
+    public void setter() {
+    }
 
     /**
-     *  this pointcut select all methods inside of base package
+     * this pointcut select all methods inside of base package
      */
     @Pointcut("execution(* az.maqa.spring.aspect.*.*.*(*))")
-    public void basePackage(){}
+    public void basePackage() {
+    }
 
 
     /**
-     *  this is pointcut combining and this methods select all methods inside of base package and without getter and setter methods
+     * this is pointcut combining and this methods select all methods inside of base package and without getter and setter methods
      */
     @Before("basePackage() && !(getter() || setter())")
-    public void forControllerPackageWithoutGetterAndSetter(){
+    public void forControllerPackageWithoutGetterAndSetter() {
         log.info("This method Executes before the all base packages' method");
     }
 
@@ -78,9 +84,68 @@ public class LoggingAspect {
      * @param e exception
      */
     @AfterThrowing(pointcut = "execution(* az.maqa.spring.aspect.controller.EmployeeController.*(..))", throwing = "e")
-    public void afterThrowingLog(Throwable e){
+    public void afterThrowingLog(Throwable e) {
         log.info("This method executes after throwing error inside of EmployeeController's any methods");
     }
 
+    /**
+     * Pointcut that matches all repositories, services and Web REST endpoints.
+     */
+    @Pointcut("within(@org.springframework.stereotype.Repository *)" +
+            " || within(@org.springframework.stereotype.Service *)" +
+            " || within(@org.springframework.web.bind.annotation.RestController *)")
+    public void springBeanPointcut() {
+        // Method is empty as this is just a Pointcut, the implementations are in the advices.
+    }
+
+    /**
+     * Pointcut that matches all Spring beans in the application's main packages.
+     */
+    @Pointcut("within(az.maqa.spring.aspect.repository..*)" +
+            " || within(az.maqa.spring.aspect.service..*)" +
+            " || within(az.maqa.spring.aspect.controller..*)")
+    public void applicationPackagePointcut() {
+        // Method is empty as this is just a Pointcut, the implementations are in the advices.
+    }
+
+    /**
+     * Advice that logs methods throwing exceptions.
+     *
+     * @param joinPoint join point for advice
+     * @param e         exception
+     */
+    @AfterThrowing(pointcut = "applicationPackagePointcut() && springBeanPointcut()", throwing = "e")
+    public void logAfterThrowing(JoinPoint joinPoint, Throwable e) {
+        log.error("Exception in {}.{}() with cause = \'{}\' and exception = \'{}\'", joinPoint.getSignature().getDeclaringTypeName(),
+                joinPoint.getSignature().getName(), e.getCause() != null ? e.getCause() : "NULL", e.getMessage(), e);
+    }
+
+    /**
+     * Advice that logs when a method is entered and exited.
+     *
+     * @param joinPoint join point for advice
+     * @return result
+     * @throws Throwable throws IllegalArgumentException
+     */
+    @Around("applicationPackagePointcut() && springBeanPointcut()")
+    public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        if (log.isDebugEnabled()) {
+            log.debug("Enter: {}.{}() with argument[s] = {}", joinPoint.getSignature().getDeclaringTypeName(),
+                    joinPoint.getSignature().getName(), Arrays.toString(joinPoint.getArgs()));
+        }
+        try {
+            Object result = joinPoint.proceed();
+            if (log.isDebugEnabled()) {
+                log.debug("Exit: {}.{}() with result = {}", joinPoint.getSignature().getDeclaringTypeName(),
+                        joinPoint.getSignature().getName(), result);
+            }
+            return result;
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal argument: {} in {}.{}()", Arrays.toString(joinPoint.getArgs()),
+                    joinPoint.getSignature().getDeclaringTypeName(), joinPoint.getSignature().getName());
+
+            throw e;
+        }
+    }
 
 }
